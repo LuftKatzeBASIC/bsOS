@@ -1,0 +1,60 @@
+To run:
+	PCJS:
+	* go to https://www.pcjs.org/machines/pcx86/ibm/5160/cga/
+	* click [Select file]
+	* select [Mount]
+	* select image.bin (os.bin will not work)
+	* click [Reset]
+	QEMU:
+	* run `qemu-system-i386 -fda os.bin'
+	EMU8086:
+	* click `emulate'
+	* virtual drive -> write '.bin' file to floppy
+	* select os.bin
+	* virtual drive -> boot from virtual floppy -> FLOPPY_0
+	* click `run'
+To build:
+	* nasm all files in src directory
+	* concatenate (unix: cat [files] > os.bin || windows: type [files] > os.bin) binary outputs in order:
+		* bsos
+		* fs
+		* ccp
+		* cls
+		* fmt
+		* hlp
+		* prt
+	* (optional) run tools\mkflp os.bin to make 360k image (output: image.bin)
+Commands:
+	* Internal:
+		* DIR - Show files
+		* ERA <file> - delete <file>
+	* External:
+		* FMT.E86 - format drive
+		* CLS.E86 - clear screen
+		* HLP.E86 - help
+		* PRT.E86 <msg> - print message
+Techical:
+	* .E86s are executables. Last 2 bytes should be 55 aa (boot sig)
+	* files are 512 bytes long
+	* .E86s are loaded to 7c00
+	* FS Record is 12-byte asciz string. Space padded
+		* Example: `"NAME.EXT",0,"   "'
+		* File's place on disk depends on Record's position. Sector = Record's number + 03
+Syscalls:
+	* int 20h:
+		* ah=00: reset system
+		* ah=01: read key (ctrlc checked), returns key in ax
+		* ah=02: put char (al=char)
+		* ah=03: print asciz string (string ptr in si)
+		* ah=04: read file (es:bx buffer, si asciz filename)		(ax=fffe on error)
+		* ah=05: write file (same as above)				(ax=fffe on error)
+		* ah=06: delete file (si asciz filename)			(ax=fffe on error)
+	* int 22h:
+		* returns to CCP (handled by CCP.SYS)
+	* int 23h:
+		* returns to CCP and stays resident (handled by CCP.SYS)
+Memory layout:
+	* 7800-79ff - CCP.SYS
+	* 7a00-7bff - KERNEL
+	* 7c00-7dff - TPA
+	
